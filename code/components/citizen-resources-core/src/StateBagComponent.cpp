@@ -1,6 +1,7 @@
 #include <StdInc.h>
 #include <StateBagComponent.h>
 
+#include <CoreConsole.h>
 #include <ResourceManager.h>
 
 #include <shared_mutex>
@@ -11,6 +12,9 @@
 
 #include <SharedFunction.h>
 #include <state/RlMessageBuffer.h>
+
+static std::shared_ptr<ConVar<bool>> allowClientStateBags;
+static bool g_allowClientStateBags;
 
 namespace fx
 {
@@ -415,6 +419,8 @@ void StateBagImpl::RemoveRoutingTarget(int peer)
 StateBagComponentImpl::StateBagComponentImpl(StateBagRole role)
 	: m_gameInterface(nullptr), m_role(role)
 {
+	static ConVar<bool> developerVariable(console::GetDefaultContext(), "state_allowClientStateBag", ConVar_Archive, false, &g_allowClientStateBags);
+
 
 }
 
@@ -660,7 +666,7 @@ void StateBagComponentImpl::HandlePacket(int source, std::string_view dataRaw, s
 	if (!bag)
 	{
 		auto safeToCreate = IsSafePreCreateName(bagName);
-		if (safeToCreate.first)
+		if (safeToCreate.first && g_allowClientStateBags)
 		{
 			bag = PreCreateStateBag(bagName, safeToCreate.second);
 		}
