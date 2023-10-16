@@ -100,30 +100,26 @@ static std::string FormatKey(const char* key, const std::string& resource = {})
 	return "res:" + resName + ":" + key;
 }
 
+template<bool sync = true>
 static void PutResourceKvp(fx::ScriptContext& context, const char* data, size_t size)
 {
 	auto db = EnsureDatabase();
 	auto key = FormatKey(context.CheckArgument<const char*>(0));
 
 	leveldb::WriteOptions options;
-	options.sync = true;
+	options.sync = sync;
 
 	db->Put(options, key, leveldb::Slice{ data, size });
 }
 
-template<typename T>
+template<typename T, bool sync = true>
 static void SetResourceKvp(fx::ScriptContext& context)
 {
 	msgpack::sbuffer buffer;
 	msgpack::packer<msgpack::sbuffer> packer(buffer);
 	packer.pack(std::is_pointer_v<T> ? context.CheckArgument<T>(1) : context.GetArgument<T>(1));
 
-	PutResourceKvp(context, buffer.data(), buffer.size());
-}
-
-static void SetResourceKvpRaw(fx::ScriptContext& context)
-{
-	PutResourceKvp(context, context.GetArgument<const char*>(1), context.GetArgument<size_t>(2));
+	PutResourceKvp<sync>(context, buffer.data(), buffer.size());
 }
 
 struct AnyType {};
@@ -319,12 +315,16 @@ static void EndFindKvp(fx::ScriptContext& context)
 	handle->dbIter.reset();
 }
 
+template<bool sync = true>
 static void DeleteResourceKvp(fx::ScriptContext& context)
 {
 	auto db = EnsureDatabase();
 	auto key = FormatKey(context.CheckArgument<const char*>(0));
 
-	db->Delete(leveldb::WriteOptions{}, key);
+	leveldb::WriteOptions options;
+	options.sync = sync;
+
+	db->Delete(options, key);
 }
 
 #include <VFSStreamDevice.h>
@@ -569,18 +569,28 @@ static InitFunction initFunction([]()
 	fx::ScriptEngine::RegisterNativeHandler("GET_RESOURCE_KVP_INT", GetResourceKvp<int>);
 	fx::ScriptEngine::RegisterNativeHandler("GET_RESOURCE_KVP_STRING", GetResourceKvp<const char*>);
 	fx::ScriptEngine::RegisterNativeHandler("GET_RESOURCE_KVP_FLOAT", GetResourceKvp<float>);
-	//fx::ScriptEngine::RegisterNativeHandler("GET_RESOURCE_RAW_KVP", GetResourceKvp<RawType>);
 
 	fx::ScriptEngine::RegisterNativeHandler("SET_RESOURCE_KVP", SetResourceKvp<const char*>);
 	fx::ScriptEngine::RegisterNativeHandler("SET_RESOURCE_KVP_INT", SetResourceKvp<int>);
 	fx::ScriptEngine::RegisterNativeHandler("SET_RESOURCE_KVP_FLOAT", SetResourceKvp<float>);
-	//fx::ScriptEngine::RegisterNativeHandler("SET_RESOURCE_RAW_KVP", SetResourceKvpRaw);
+
+	fx::ScriptEngine::RegisterNativeHandler("SET_RESOURCE_KVP_NO_SYNC", SetResourceKvp<const char*, false>);
+	fx::ScriptEngine::RegisterNativeHandler("SET_RESOURCE_KVP_INT_NO_SYNC", SetResourceKvp<int, false>);
+	fx::ScriptEngine::RegisterNativeHandler("SET_RESOURCE_KVP_FLOAT_NO_SYNC", SetResourceKvp<float, false>);
+
+	// this isn't needed on the client, we add it to just throw an error just in case people use it so they get a more
+	// informative error instead of just getting "This native doesn't exist"
+	fx::ScriptEngine::RegisterNativeHandler("FLUSH_RESOURCE_KVP", [](fx::ScriptContext context)
+	{
+		return std::runtime_error("You do not need to call FLUSH_RESOURCE_KVP for client side NO_SYNC operations.");
+	});
 
 	fx::ScriptEngine::RegisterNativeHandler("GET_EXTERNAL_KVP_INT", GetExternalKvp<int>);
 	fx::ScriptEngine::RegisterNativeHandler("GET_EXTERNAL_KVP_STRING", GetExternalKvp<const char*>);
 	fx::ScriptEngine::RegisterNativeHandler("GET_EXTERNAL_KVP_FLOAT", GetExternalKvp<float>);
 
-	fx::ScriptEngine::RegisterNativeHandler("DELETE_RESOURCE_KVP", DeleteResourceKvp);
+	fx::ScriptEngine::RegisterNativeHandler("DELETE_RESOURCE_KVP", DeleteResourceKvp<>);
+	fx::ScriptEngine::RegisterNativeHandler("DELETE_RESOURCE_KVP_NO_SYNC", DeleteResourceKvp<false>);
 
 	fx::ScriptEngine::RegisterNativeHandler("START_FIND_KVP", StartFindKvp);
 	fx::ScriptEngine::RegisterNativeHandler("START_FIND_EXTERNAL_KVP", StartFindExternalKvp);
