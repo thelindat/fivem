@@ -300,6 +300,9 @@ static std::map<std::string, int> clientsPerIP;
 
 extern std::recursive_mutex g_mumbleClientMutex;
 
+extern static std::set<int> mutedPlayers;
+extern std::mutex g_mumbleMuteMutex;
+
 void Server_onFree(client_t* client)
 {
 	std::lock_guard _(mumblePairsMutex);

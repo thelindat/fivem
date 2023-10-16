@@ -83,6 +83,9 @@ extern bool_t hasv4;
 
 std::recursive_mutex g_mumbleClientMutex;
 
+std::mutex g_mumbleMuteMutex;
+std::set<int> mutedPlayers;
+
 void Client_init()
 {
 	maxBandwidth = getIntConf(MAX_BANDWIDTH) / 8; /* From bits/s -> bytes/s */
@@ -127,6 +130,16 @@ bool Client_is_player_muted(int serverId)
 
 void Client_set_player_muted(int serverId, bool muted)
 {
+	{
+		std::unique_lock lock(g_mumbleMuteMutex);
+		if (muted)
+		{
+			mutedPlayers.emplace(serverId);
+		} else
+		{
+			mutedPlayers.erase(serverId);
+		}
+	}
 	auto convertedServerId = fmt::sprintf("[%d]", serverId);
 	struct dlist *itr, *save;
 	list_iterate_safe(itr, save, &clients)

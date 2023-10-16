@@ -188,6 +188,10 @@ void Mh_handle_message(client_t *client, message_t *msg)
 		/* Name */
 		client->username = strdup(msg->payload.authenticate->username().c_str());
 
+		{
+			client->mute = true;
+		}
+
 		/* Tokens */
 		if (msg->payload.authenticate->tokens_size() > 0)
 			addTokens(client, msg);
