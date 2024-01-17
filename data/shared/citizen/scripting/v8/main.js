@@ -46,6 +46,8 @@ const EXT_LOCALFUNCREF = 11;
 		binarraybuffer: true
 	});
 
+	global.msgpack_codec = codec;
+
 	const pack = data => msgpack.encode(data, { codec });
 	const unpack = data => msgpack.decode(data, { codec });
 
