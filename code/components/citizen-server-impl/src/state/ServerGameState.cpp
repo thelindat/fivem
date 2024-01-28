@@ -6957,14 +6957,34 @@ static InitFunction initFunction([]()
 
 		gameServer->GetComponent<fx::HandlerMapComponent>()->Add(HashRageString("msgNetGameEvent"), { fx::ThreadIdx::Sync, [=](const fx::ClientSharedPtr& client, net::Buffer& buffer)
 		{
+			// this should match up with SendGameEventRaw on client builds
+			// 8192 is from the rlBuffer (8 * 1024)
+			// 2048 is from the max amount of players (16 * 128)
+			// 16 is event id
+			// 16 is from event type
+			// 16 is from length of rlBuffer
+			// 8 from target size
+			// 8 from un-named field
+			constexpr int kMaxPacketSize = 8192 + 2048 + 16 + 16 + 16 + 8 + 8;
+
+			if (buffer.GetLength() > kMaxPacketSize)
+			{
+				return;
+			}
+			
 			auto sgs = instance->GetComponent<fx::ServerGameState>();
 			auto targetPlayerCount = buffer.Read<uint8_t>();
+			
 			std::vector<uint16_t> targetPlayers(targetPlayerCount);
 
 			if (!buffer.Read(targetPlayers.data(), targetPlayers.size() * sizeof(uint16_t)))
 			{
 				return;
 			}
+
+			// de-duplicate targetPlayers so you can't send a large amount of events to one client
+			std::sort( targetPlayers.begin(), targetPlayers.end());
+			targetPlayers.erase(std::unique( targetPlayers.begin(), targetPlayers.end()), targetPlayers.end());
 
 			net::Buffer netBuffer;
 			netBuffer.Write<uint32_t>(HashRageString("msgNetGameEvent"));
