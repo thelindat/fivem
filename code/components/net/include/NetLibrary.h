@@ -229,9 +229,11 @@ public:
 
 	virtual void RoutePacket(const char* buffer, size_t length, uint16_t netID) override;
 
-	virtual void SendReliableCommand(const char* type, const char* buffer, size_t length) override;
+	virtual void SendReliableCommand(uint32_t commandType, const char* buffer, size_t length) override;
 
-	void SendUnreliableCommand(const char* type, const char* buffer, size_t length);
+	virtual void SendReliableCommand(uint32_t commandType, const net::Buffer& buffer) override;
+
+	void SendUnreliableCommand(uint32_t commandType, const char* buffer, size_t length);
 
 	void RunMainFrame();
 

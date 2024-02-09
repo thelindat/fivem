@@ -539,19 +539,28 @@ RoutingPacket::RoutingPacket()
 	genTime = 0;
 }
 
-void NetLibrary::SendReliableCommand(const char* type, const char* buffer, size_t length)
+
+void NetLibrary::SendReliableCommand(uint32_t commandType, const net::Buffer& buffer)
 {
 	if (auto impl = GetImpl())
 	{
-		impl->SendReliableCommand(HashRageString(type), buffer, length);
+		impl->SendReliableCommand(commandType, reinterpret_cast<const char*>(buffer.GetBuffer()), buffer.GetCurOffset());
 	}
 }
 
-void NetLibrary::SendUnreliableCommand(const char* type, const char* buffer, size_t length)
+void NetLibrary::SendReliableCommand(uint32_t commandType, const char* buffer, size_t length)
 {
 	if (auto impl = GetImpl())
 	{
-		impl->SendUnreliableCommand(HashRageString(type), buffer, length);
+		impl->SendReliableCommand(commandType, buffer, length);
+	}
+}
+
+void NetLibrary::SendUnreliableCommand(uint32_t commandType, const char* buffer, size_t length)
+{
+	if (auto impl = GetImpl())
+	{
+		impl->SendUnreliableCommand(commandType , buffer, length);
 	}
 }
 
@@ -1935,7 +1944,7 @@ void NetLibrary::Disconnect(const char* reason)
 	{
 		m_disconnecting = true;
 
-		SendReliableCommand("msgIQuit", g_disconnectReason.c_str(), g_disconnectReason.length() + 1);
+		SendReliableCommand(HashRageString("msgIQuit"), g_disconnectReason.c_str(), g_disconnectReason.length() + 1);
 
 		if (auto impl = GetImpl())
 		{
@@ -2104,7 +2113,7 @@ void NetLibrary::SendNetEvent(const std::string& eventName, const std::string& j
 
 	buffer.Write(jsonString.c_str(), jsonString.size());
 	
-	SendReliableCommand(cmdType, reinterpret_cast<const char*>(buffer.GetBuffer()), buffer.GetCurOffset());
+	SendReliableCommand(HashRageString(cmdType), buffer);
 }
 
 /*void NetLibrary::AddReliableHandler(const char* type, ReliableHandlerType function)

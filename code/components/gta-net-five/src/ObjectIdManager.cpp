@@ -227,7 +227,7 @@ static HookFunction hookFunction([]()
 				net::Buffer outBuffer;
 				outBuffer.Write<uint16_t>(32);
 
-				g_netLibrary->SendReliableCommand("msgRequestObjectIds", (const char*)outBuffer.GetData().data(), outBuffer.GetCurOffset());
+				g_netLibrary->SendReliableCommand(HashRageString("msgRequestObjectIds"), outBuffer);
 
 				g_requestedIds = true;
 			}

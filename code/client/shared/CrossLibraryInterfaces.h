@@ -7,6 +7,11 @@
 
 #pragma once
 
+namespace net
+{
+	class Buffer;
+}
+
 // library for game-specific network integration code to interface with the CitizenGame network library
 class INetLibrary
 {
@@ -33,7 +38,9 @@ public:
 
 	virtual void RoutePacket(const char* buffer, size_t length, uint16_t netID) = 0;
 
-	virtual void SendReliableCommand(const char* type, const char* buffer, size_t length) = 0;
+	virtual void SendReliableCommand(uint32_t commandType, const char* buffer, size_t length) = 0;
+
+	virtual void SendReliableCommand(uint32_t commandType, const net::Buffer& buffer) = 0;
 };
 
 struct WNDPROCARGS

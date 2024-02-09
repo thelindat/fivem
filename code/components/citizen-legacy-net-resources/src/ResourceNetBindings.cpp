@@ -796,7 +796,7 @@ void NetLibraryResourcesComponent::AttachToObject(NetLibrary* netLibrary)
 
 		buffer.Write(eventPayload.c_str(), eventPayload.size());
 
-		netLibrary->SendReliableCommand("msgServerEvent", reinterpret_cast<const char*>(buffer.GetBuffer()), buffer.GetCurOffset());
+		netLibrary->SendReliableCommand(HashRageString("msgServerEvent"), buffer);
 	});
 
 	fx::ScriptEngine::RegisterNativeHandler("TRIGGER_LATENT_SERVER_EVENT_INTERNAL", [netLibrary](fx::ScriptContext& context)
@@ -883,7 +883,7 @@ void NetLibraryResourcesComponent::AttachToObject(NetLibrary* netLibrary)
 		buffer.Write(s.c_str(), std::min(s.size(), static_cast<size_t>(INT16_MAX)));
 		buffer.Write<uint32_t>(HashString(context.c_str()));
 
-		netLibrary->SendReliableCommand("msgServerCommand", reinterpret_cast<const char*>(buffer.GetBuffer()), buffer.GetCurOffset());
+		netLibrary->SendReliableCommand(HashRageString("msgServerCommand"), buffer);
 
 		return false;
 	},
@@ -896,7 +896,7 @@ static class : public fx::EventReassemblySink
 {
 	virtual void SendPacket(int target, std::string_view packet) override
 	{
-		g_netLibrary->SendUnreliableCommand("msgReassembledEvent", packet.data(), packet.size());
+		g_netLibrary->SendUnreliableCommand(HashRageString("msgReassembledEvent"), packet.data(), packet.size());
 	}
 } g_eventSink;
 

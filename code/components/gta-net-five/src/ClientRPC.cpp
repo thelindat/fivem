@@ -587,7 +587,7 @@ static InitFunction initFunction([]()
 												netBuffer.Write<uint16_t>(creationToken);
 												netBuffer.Write<uint16_t>(obj); // object ID (short)
 
-												g_netLibrary->SendReliableCommand("msgEntityCreate", (const char*)netBuffer.GetData().data(), netBuffer.GetCurOffset());
+												g_netLibrary->SendReliableCommand(HashRageString("msgEntityCreate"), netBuffer);
 											}
 											else
 											{

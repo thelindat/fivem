@@ -183,7 +183,7 @@ void ArrayManager_Update()
 					outBuffer.Write<uint16_t>(sv.size());
 					outBuffer.Write(sv.data(), sv.size());
 
-					g_netLibrary->SendReliableCommand("msgArrayUpdate", (const char*)outBuffer.GetData().data(), outBuffer.GetCurOffset());
+					g_netLibrary->SendReliableCommand(HashRageString("msgArrayUpdate"), outBuffer);
 
 					info->hashes[elem] = thisHash;
 				}

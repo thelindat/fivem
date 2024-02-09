@@ -339,7 +339,7 @@ void CloneManagerLocal::OnObjectDeletion(rage::netObject* netObject)
 
 void CloneManagerLocal::SendPacket(int peer, std::string_view data)
 {
-	m_netLibrary->SendReliableCommand("msgStateBag", data.data(), data.size());
+	m_netLibrary->SendReliableCommand(HashRageString("msgStateBag"), data.data(), data.size());
 }
 
 void CloneManagerLocal::BindNetLibrary(NetLibrary* netLibrary)
@@ -1092,7 +1092,7 @@ bool CloneManagerLocal::HandleCloneCreate(const msgClone& msg)
 			net::Buffer outBuffer;
 			outBuffer.Write<uint16_t>(msg.GetObjectId());
 
-			m_netLibrary->SendReliableCommand("ccack", (const char*)outBuffer.GetData().data(), outBuffer.GetCurOffset());
+			m_netLibrary->SendReliableCommand(HashRageString("ccack"), outBuffer);
 		}
 	};
 
@@ -1796,7 +1796,7 @@ void CloneManagerLocal::HandleCloneSync(const char* data, size_t len)
 
 			Log("GSAck for frame index %d w/ %d ignore and %d rec\n", frameIndex, ignoreList.size(), recreateList.size());
 
-			m_netLibrary->SendUnreliableCommand("gameStateAck", (const char*)outBuffer.GetData().data(), outBuffer.GetCurOffset());
+			m_netLibrary->SendUnreliableCommand(HashRageString("gameStateAck"), (const char*)outBuffer.GetData().data(), outBuffer.GetCurOffset());
 
 			ignoreList.clear();
 			recreateList.clear();
@@ -1859,7 +1859,7 @@ void CloneManagerLocal::HandleCloneSync(const char* data, size_t len)
 			}
 		}
 
-		m_netLibrary->SendReliableCommand("gameStateNAck", (const char*)outBuffer.GetData().data(), outBuffer.GetCurOffset());
+		m_netLibrary->SendReliableCommand(HashRageString("gameStateNAck"), outBuffer);
 
 		ignoreList.clear();
 		recreateList.clear();
