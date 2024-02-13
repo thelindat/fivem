@@ -560,6 +560,10 @@ public:
 		}
 	}
 
+	inline uint32_t GetRemainingBytes() {
+		return (m_data.size() * 8) - m_curBit;
+	}
+
 	inline uint32_t GetCurrentBit()
 	{
 		return m_curBit;

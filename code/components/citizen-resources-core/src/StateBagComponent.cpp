@@ -27,7 +27,7 @@ public:
 
 	virtual void Reset() override;
 
-	virtual void HandlePacket(int source, std::string_view data, std::string* outBagNameName = nullptr) override;
+	virtual void HandlePacket(int source, std::string_view bagId, std::string_view bagName, std::string_view bagData, std::string* outBagNameName = nullptr) override;
 
 	virtual std::shared_ptr<StateBag> GetStateBag(std::string_view id) override;
 
@@ -592,77 +592,17 @@ void StateBagComponentImpl::AttachToObject(fx::ResourceManager* object)
 	INT32_MIN);
 }
 
-void StateBagComponentImpl::HandlePacket(int source, std::string_view dataRaw, std::string* outBagNameName)
+void StateBagComponentImpl::HandlePacket(int source, std::string_view bagId, std::string_view bagKey, std::string_view bagData, std::string* outBagNameName)
 {
-	// read state
-	rl::MessageBuffer buffer{ reinterpret_cast<const uint8_t*>(dataRaw.data()), dataRaw.size() };
 
-	auto readStr = [&buffer]()
-	{
-		uint16_t length = 0;
-
-		buffer.Read<uint16_t>(16, &length);
-
-		// validate input
-		if (length <= 0 || length > std::numeric_limits<uint16_t>::max())
-		{
-			return std::vector<char>{};
-		}
-
-		std::vector<char> rbuffer(length - 1);
-		buffer.ReadBits(rbuffer.data(), rbuffer.size() * 8);
-		buffer.Read<uint8_t>(8);
-
-		return std::move(rbuffer);
-	};
-
-	// read id
-	auto idNameBuffer = readStr();
-
-	if (idNameBuffer.empty())
-	{
-		return;
-	}
-
-	// read key
-	auto keyBuffer = readStr();
-
-	if (keyBuffer.empty())
-	{
-		return;
-	}
-
-	// if m_curBit is greater then m_maxBit we will overflow the dataLength, which would lead to an allocation of an
-	// extremely large buffer, which would fail and crash the server.
-	if (buffer.IsAtEnd())
-	{
-		return;
-	}
-
-	// read data
-	size_t dataLength = (buffer.GetLength() * 8) - buffer.GetCurrentBit();
-
-	if (dataLength == 0)
-	{
-		return;
-	}
-
-	std::vector<uint8_t> data(dataLength / 8);
-	buffer.ReadBits(data.data(), dataLength);
-
-	// handle data
-	auto bagName = std::string_view{
-		idNameBuffer.data(), idNameBuffer.size()
-	};
-
-	auto bag = GetStateBag(bagName);
+	auto bag = GetStateBag(bagId);
 
 	if (!bag)
 	{
-		auto safeToCreate = IsSafePreCreateName(bagName);
+		auto safeToCreate = IsSafePreCreateName(bagId);
 		if (safeToCreate.first)
 		{
-			bag = PreCreateStateBag(bagName, safeToCreate.second);
+			bag = PreCreateStateBag(bagId, safeToCreate.second);
 		}
 	}
 
@@ -676,14 +616,14 @@ void StateBagComponentImpl::HandlePacket(int source, std::string_view dataRaw, s
 		{
 			bagRef->SetKey(
 				source,
-				std::string_view{ keyBuffer.data(), keyBuffer.size() },
-				std::string_view{ reinterpret_cast<char*>(data.data()), data.size() },
+				bagKey,
+				bagData,
 				m_role == StateBagRole::Server);
 		}		
 	}
 	else if(outBagNameName != nullptr)
 	{
-		*outBagNameName = bagName;
+		*outBagNameName = bagId;
 	}
 }
 
@@ -705,8 +645,74 @@ void StateBagComponentImpl::Reset()
 	}
 }
 
+
+std::optional<std::tuple<std::string_view, std::string_view, std::string_view>> StateBagComponent::GetStateBagDataFromBuffer(rl::MessageBuffer& buffer)
+{
+	auto readStr = [&buffer]()
+	{
+		uint16_t length = 0;
+
+		buffer.Read<uint16_t>(16, &length);
+
+		// validate input
+		if (length <= 0 || length > std::numeric_limits<uint16_t>::max())
+		{
+			return std::string_view{};
+		}
+
+		std::vector<char> readBuffer(length - 1);
+		bool rBufferReadFailed = buffer.ReadBits(readBuffer.data(), readBuffer.size() * 8);
+		if (rBufferReadFailed)
+		{
+			return std::string_view{};
+		}
+		buffer.Read<uint8_t>(8);
+
+		const std::string str(readBuffer.begin(), readBuffer.end());
+
+		return std::string_view { str };
+	};
+
+
+	// read id
+	auto idNameBuffer = readStr();
+
+	if (idNameBuffer.empty())
+	{
+		return std::nullopt;
+	}
+
+	// read key
+	auto keyBuffer = readStr();
+
+	if (keyBuffer.empty())
+	{
+		return std::nullopt;
+	}
+	// if m_curBit is greater than m_maxBit we will overflow the dataLength, which would lead to an allocation of an
+	// extremely large buffer, which would fail and crash the server.
+	if (buffer.IsAtEnd())
+	{
+		return std::nullopt;
+	}
+
+	// read data
+	const uint32_t dataLength = buffer.GetRemainingBytes();
+
+	if (dataLength == 0)
+	{
+		return std::nullopt;
+	}
+
+	std::vector<uint8_t> data(dataLength / 8);
+	buffer.ReadBits(data.data(), dataLength);
+
+	return std::make_tuple(idNameBuffer, keyBuffer, std::string_view{ reinterpret_cast<char*>(data.data()), data.size() });
+}
+
 fwRefContainer<StateBagComponent> StateBagComponent::Create(StateBagRole role)
 {
 	return new StateBagComponentImpl(role);
 }
+
 }

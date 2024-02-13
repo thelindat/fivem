@@ -4252,7 +4252,7 @@ void ServerGameState::AttachToObject(fx::ServerInstanceBase* instance)
 	sbac->SetGameInterface(this);
 
 	instance->GetComponent<fx::GameServer>()->GetComponent<fx::HandlerMapComponent>()->Add(HashRageString("msgStateBag"), 
-		{ fx::ThreadIdx::Sync, [this, instance](const fx::ClientSharedPtr& client, net::Buffer& buffer)
+		{ fx::ThreadIdx::Sync, [this, instance](const fx::ClientSharedPtr& client, const net::Buffer& buffer)
 	{
 		static fx::RateLimiterStore<uint32_t, false> stateBagRateLimiterStore{ instance->GetComponent<console::Context>().GetRef() };
 			
@@ -4275,13 +4275,27 @@ void ServerGameState::AttachToObject(fx::ServerInstanceBase* instance)
 		const bool hitRateLimit = !stateBagRateLimiter->Consume(netId);
 		const bool hitFloodRateLimit = !stateBagRateFloodLimiter->Consume(netId);
 
+		const auto dataLength = buffer.GetLength();
+
+		rl::MessageBuffer rlBuffer{ buffer.GetBuffer(), buffer.GetLength() };
+
+
+		const auto stateBagInfo = StateBagComponent::GetStateBagDataFromBuffer(rlBuffer);
+
+		if (!stateBagInfo.has_value())
+		{
+			return;
+		}
+
+		const auto [bagId, bagKey, bagValue] = *stateBagInfo;
+
 		if (hitRateLimit)
 		{
 			const std::string& clientName = client->GetName();
 			auto printStateWarning = [&clientName, netId](const std::string& logChannel, const std::string_view logReason, const std::string_view rateLimiter, double rateLimit, double burstRateLimit)
 			{
 				console::Printf(logChannel, logReason, clientName, netId);
-				console::Printf(logChannel, "If you believe this to be a mistake please increase your rateLimiter_%s_rate and rateLimiter_%s_burst. ", rateLimiter, rateLimiter);
+				console::Printf(logChannel, "If you believe this to be a mistake please increase your rateLimiter_%s_rate and rateLimiter_%s_burst.\n", rateLimiter, rateLimiter);
 				console::Printf(logChannel, "You can do this with `set rateLimiter_%s_rate [new value]`. The default rate limit is %0.0f and burst limit is %0.0f\n", rateLimiter, rateLimit, burstRateLimit);
 				console::Printf(logChannel, "You can disable this warning with `con_addChannelFilter %s drop` if you think you have this properly set up.\n", logChannel);
 			};
@@ -4312,7 +4326,6 @@ void ServerGameState::AttachToObject(fx::ServerInstanceBase* instance)
 			return;
 		}
 
-		uint32_t dataLength = buffer.GetRemainingBytes();
 		if (!stateBagSizeRateLimiter->Consume(netId, double(dataLength)))
 		{
 			if (!client->IsDropping())
@@ -4333,8 +4346,7 @@ void ServerGameState::AttachToObject(fx::ServerInstanceBase* instance)
 		{
 			std::string bagNameOnFailure;
 
-			std::string_view packetData(reinterpret_cast<const char*>(buffer.GetBuffer() + buffer.GetCurOffset()), buffer.GetRemainingBytes());
-			m_sbac->HandlePacket(slotId, packetData, &bagNameOnFailure);
+			m_sbac->HandlePacket(slotId, bagId, bagKey, bagValue, &bagNameOnFailure);
 
 			// state bag isn't present, apply conditions for automatic creation
 			if (!bagNameOnFailure.empty())
@@ -4355,7 +4367,7 @@ void ServerGameState::AttachToObject(fx::ServerInstanceBase* instance)
 							}
 
 							entity->SetStateBag(m_sbac->RegisterStateBag(bagNameOnFailure));
-							m_sbac->HandlePacket(slotId, packetData); // second attempt, should go through now
+							m_sbac->HandlePacket(slotId, bagId, bagKey, bagValue); // second attempt, should go through now
 						}
 					}
 				}

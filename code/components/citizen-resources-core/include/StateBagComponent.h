@@ -7,6 +7,8 @@
 
 #include <msgpack.hpp>
 
+#include "state/RlMessageBuffer.h"
+
 #ifdef COMPILING_CITIZEN_RESOURCES_CORE
 #define CRC_EXPORT DLL_EXPORT
 #else
@@ -112,7 +114,12 @@ public:
 	// Should be called when receiving a state bag control packet.
 	// arg: outBagNameName; if given (!= nullptr) and if the state bag wasn't found then this string will contain the bag name, otherwise outBagNameName is unchanged.
 	//
-	virtual void HandlePacket(int source, std::string_view data, std::string* outBagNameName = nullptr) = 0;
+	virtual void HandlePacket(int source, std::string_view bagId, std::string_view bagKey, std::string_view bagValue, std::string* outBagNameName = nullptr) = 0;
+
+	//
+	// Returns the state bag id & key from the message buffer
+	//
+	static std::optional<std::tuple<std::string_view, std::string_view, std::string_view>> GetStateBagDataFromBuffer(rl::MessageBuffer& buffer);
 
 	//
 	// Gets a state bag by an identifier. Returns an empty shared_ptr if not found.
