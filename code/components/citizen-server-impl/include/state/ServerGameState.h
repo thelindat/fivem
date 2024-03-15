@@ -727,6 +727,8 @@ public:
 
 	virtual CPedMovementGroupNodeData* GetPedMovementGroup() = 0;
 
+	virtual CVehicleCreationDataNode* GetVehicleCreationNode() = 0; 
+
 	virtual void CalculatePosition() = 0;
 
 	virtual bool GetPopulationType(ePopType* popType) = 0;

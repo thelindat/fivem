@@ -1311,6 +1311,13 @@ struct SyncTree : public SyncTreeBaseImpl<TNode, true>
 		return nullptr;
 	}
 
+	virtual CVehicleCreationDataNode* GetVehicleCreationNode() override
+	{
+		auto [hasNode, node] = this->template GetData<CVehicleCreationDataNode>();
+
+		return hasNode ? &node->data : nullptr;
+	}
+
 	virtual void CalculatePosition() override
 	{
 		// TODO: cache it?

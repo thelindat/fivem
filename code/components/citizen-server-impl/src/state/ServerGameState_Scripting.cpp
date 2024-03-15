@@ -719,6 +719,21 @@ static void Init()
 			auto pn = entity->syncTree->GetPedHealth();
 			return pn ? pn->maxHealth : 0;
 		}
+		// RDR3 has GetVehicleCreationNode partially mapped out but it does not have m_maxHealth
+#ifndef STATE_RDR3
+		case fx::sync::NetObjEntityType::Automobile:
+		case fx::sync::NetObjEntityType::Bike:
+		case fx::sync::NetObjEntityType::Boat:
+		case fx::sync::NetObjEntityType::Heli:
+		case fx::sync::NetObjEntityType::Plane:
+		case fx::sync::NetObjEntityType::Submarine:
+		case fx::sync::NetObjEntityType::Trailer:
+		case fx::sync::NetObjEntityType::Train:
+		{
+			auto pn = entity->syncTree->GetVehicleCreationNode();
+			return pn ? pn->m_maxHealth : 0;
+		}
+#endif
 		default:
 			return 0;
 		}
