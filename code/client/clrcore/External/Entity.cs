@@ -38,6 +38,8 @@ namespace CitizenFX.Core
 		{
 		}
 
+		public static implicit operator int(Entity entity) => entity.Handle;
+
 		/// <summary>
 		/// Gets the memory address where the <see cref="Entity"/> is stored in memory.
 		/// </summary>

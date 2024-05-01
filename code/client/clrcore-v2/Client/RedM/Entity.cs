@@ -149,5 +149,7 @@ namespace CitizenFX.RedM
 		{
 			return !ReferenceEquals(entity, null) && Handle == entity.Handle;
 		}
+		
+		public static implicit operator int(Entity entity) => entity.Handle;
 	}
 }

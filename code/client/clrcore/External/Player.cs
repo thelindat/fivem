@@ -63,6 +63,8 @@ namespace CitizenFX.Core
 		public Player(int handle) : base((ulong)handle)
 		{
 		}
+		
+		public static implicit operator int(Player player) => player.Handle;
 #else
 		public Player(int handle)
 		{

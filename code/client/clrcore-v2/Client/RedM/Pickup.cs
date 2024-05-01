@@ -54,5 +54,6 @@ namespace CitizenFX.RedM
 			return !(left == right);
 		}
 	
+		public static implicit operator int(Pickup pickup) => pickup.Handle;
 	}
 }
