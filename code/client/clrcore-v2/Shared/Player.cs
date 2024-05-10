@@ -28,6 +28,7 @@ namespace CitizenFX.Shared
 		/// </summary>
 		public int Handle => (int)m_nativeValue;
 #endif
+		
 		/// <summary>
 		/// Gets the name of this player
 		/// </summary>
