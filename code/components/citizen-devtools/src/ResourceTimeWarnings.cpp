@@ -27,7 +27,6 @@ using namespace std::chrono_literals;
 
 void BytesToHumanReadable(std::string& humanSize, int totalBytes)
 {
-	humanSize = fmt::sprintf("%d B", totalBytes);
 
 	if (totalBytes > (1024 * 1024 * 1024))
 	{
@@ -40,6 +39,10 @@ void BytesToHumanReadable(std::string& humanSize, int totalBytes)
 	else if (totalBytes > 1024)
 	{
 		humanSize = fmt::sprintf("%.2f KiB", totalBytes / 1024.0);
+	}
+	else
+	{
+		humanSize = fmt::sprintf("%d B", totalBytes);
 	}
 }
 
@@ -777,14 +780,14 @@ static InitFunction initFunction([]()
 			auto pools = rage::GetPools();
 			struct PoolInfo
 			{
-				std::string name;
+				std::string_view name;
 				size_t itemSize;
 				size_t totalSize;
 				size_t items;
 				size_t maxItems;
 				float used;
 
-				PoolInfo(const std::string& _name, size_t _itemSize, size_t _totalSize, size_t _items, size_t _maxItems, float _used)
+				PoolInfo(std::string_view _name, size_t _itemSize, size_t _totalSize, size_t _items, size_t _maxItems, float _used)
 					: name(_name), itemSize(_itemSize), totalSize(_totalSize), items(_items), maxItems(_maxItems), used(_used)
 				{
 				}
@@ -840,7 +843,7 @@ static InitFunction initFunction([]()
 								switch (sortSpec->ColumnIndex)
 								{
 									case 0:
-										delta = strcmpi(left.name.c_str(), right.name.c_str());
+										delta = left.name.compare(right.name);
 										break;
 									case 1:
 										delta = left.itemSize - right.itemSize;
@@ -858,13 +861,14 @@ static InitFunction initFunction([]()
 										delta = static_cast<int>(left.used * 1000) - static_cast<int>(right.used * 1000);
 										break;
 								}
+
 								if (delta > 0)
-									return (sortSpec->SortDirection == ImGuiSortDirection_Ascending) ? false : true;
+									return sortSpec->SortDirection != ImGuiSortDirection_Ascending;
 								if (delta < 0)
-									return (sortSpec->SortDirection == ImGuiSortDirection_Ascending) ? true : false;
+									return sortSpec->SortDirection == ImGuiSortDirection_Ascending;
 							}
 
-							return strcmpi(left.name.c_str(), right.name.c_str()) < 0;
+							return left.name.compare(right.name) < 0;
 						});
 					}
 				}
@@ -881,7 +885,7 @@ static InitFunction initFunction([]()
 
 					ImGui::TableNextRow();
 					ImGui::TableNextColumn();
-					ImGui::Text("%s", poolData.name.c_str());
+					ImGui::Text(poolData.name.data());
 					ImGui::TableNextColumn();
 					ImGui::Text("%d", poolData.itemSize);
 					ImGui::TableNextColumn();
@@ -901,7 +905,7 @@ static InitFunction initFunction([]()
 				// Properly sort it before export
 				std::sort(poolsInfo.begin(), poolsInfo.end(), [](const PoolInfo& left, const PoolInfo& right)
 				{
-					return strcmpi(left.name.c_str(), right.name.c_str()) < 0;
+					return left.name.compare(right.name) < 0;
 				});
 
 				trace("--- Pools memory usage report ---\n");
@@ -914,7 +918,7 @@ static InitFunction initFunction([]()
 					std::string humanSize;
 					BytesToHumanReadable(humanSize, poolData.totalSize);
 
-					trace(" - %s, item size = %d, total size = %s, items count = %d, pool size = %d\n", poolData.name.c_str(), poolData.itemSize, humanSize.c_str(), poolData.items, poolData.maxItems);
+					trace(" - %s, item size = %d, total size = %s, items count = %d, pool size = %d\n", poolData.name, poolData.itemSize, humanSize.c_str(), poolData.items, poolData.maxItems);
 				}
 				trace("--- Pools memory usage report end ---\n");
 			}

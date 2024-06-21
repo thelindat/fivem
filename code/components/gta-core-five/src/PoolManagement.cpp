@@ -21,17 +21,24 @@ public:
 			m_lookupList.insert({ HashString(list[i]), list[i] });
 		}
 	}
-
-	inline std::string LookupHash(uint32_t hash)
+	
+	inline std::string_view LookupHash(uint32_t hash)
 	{
 		auto it = m_lookupList.find(hash);
 
 		if (it != m_lookupList.end())
 		{
-			return std::string(it->second);
+			return it->second;
 		}
 
-		return fmt::sprintf("0x%08x", hash);
+		// intentionally leak memory as this is meant to be static
+		char* str = new char[10];
+		
+		strcpy(str, fmt::sprintf("0x%08x", hash).c_str());
+
+		const auto data = m_lookupList.insert({ hash, std::string_view(str) });
+
+		return data.first->second;
 	}
 
 private:
@@ -40,7 +47,7 @@ private:
 
 static std::unordered_map<uint32_t, atPoolBase*> g_pools;
 static std::unordered_map<atPoolBase*, uint32_t> g_inversePools;
-static std::unordered_map<std::string, atPoolBase*> g_namedPools;
+static std::unordered_map<std::string_view, atPoolBase*> g_namedPools;
 
 static const char* poolEntriesTable[] = {
 	"AnimatedBuilding",
@@ -218,7 +225,7 @@ atPoolBase* rage::GetPoolBase(uint32_t hash)
 	return it->second;
 }
 
-const std::unordered_map<std::string, atPoolBase*>& rage::GetPools()
+const std::unordered_map<std::string_view, atPoolBase*>& rage::GetPools()
 {
 	return g_namedPools;
 }
