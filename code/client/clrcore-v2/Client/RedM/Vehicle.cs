@@ -33,7 +33,7 @@ namespace CitizenFX.RedM
         /// <summary>
         /// Returns the <see cref="Vehicle" /> or null if <paramref name="handle"/> is 0
         /// </summary>
-        public static Vehicle GetVehicleOrNull(int handle) {
+        public static Vehicle? GetVehicleOrNull(int handle) {
             return handle == 0 ? null : new Vehicle(handle);
         }
 
@@ -56,7 +56,7 @@ namespace CitizenFX.RedM
         /// The ped in the specified <paramref name="harness"/>, or null if it
         /// doesnt exist.
         /// </value>
-        public Ped GetPedInHarness(Harness harness) => Ped.GetPedOrNull(Natives.GetPedInDraftHarness(Handle, (int)harness));
+        public Ped? GetPedInHarness(Harness harness) => Ped.GetPedOrNull(Natives.GetPedInDraftHarness(Handle, (int)harness));
 
         /// <summary>
         /// Gets the current driver of the vehicle
@@ -64,7 +64,7 @@ namespace CitizenFX.RedM
         /// <value>
         /// The ped in the driver seat or null if the Ped didn't exist
         /// </value>
-        public Ped Driver => Ped.GetPedOrNull(Natives.GetDriverOfVehicle(Handle));
+        public Ped? Driver => Ped.GetPedOrNull(Natives.GetDriverOfVehicle(Handle));
 
         // TODO: Test and Document
         // public void AddTemporaryTrainStop(int trackIndex, Vector3 pos)
@@ -107,7 +107,7 @@ namespace CitizenFX.RedM
         /// <value>
         /// Returns the <see cref="Prop" /> for the broken off wheel or null if the wheel didn't exist
         /// </value>
-        public Prop BreakOffVehicleWheel(WheelIndex wheelIndex) => Prop.GetPropOrNull(Natives.BreakOffVehicleWheel(Handle, (int)wheelIndex));
+        public Prop? BreakOffVehicleWheel(WheelIndex wheelIndex) => Prop.GetPropOrNull(Natives.BreakOffVehicleWheel(Handle, (int)wheelIndex));
 
         /// <summary>
         /// Halts the vehicle after <paramref name="distance"/> units. The

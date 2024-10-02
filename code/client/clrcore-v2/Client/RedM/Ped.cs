@@ -12,7 +12,7 @@ namespace CitizenFX.RedM
 		/// <summary>
 		/// Returns the Ped or null if <paramref name="handle"/> is 0
 		/// </summary>
-		public static Ped GetPedOrNull(int handle) {
+		public static Ped? GetPedOrNull(int handle) {
 			return handle == 0 ? null : new Ped(handle);
 		}
 
@@ -34,7 +34,7 @@ namespace CitizenFX.RedM
 		/// <summary>
 		/// Returns the <see cref="Vehicle"/> the ped is in, or null if the vehicle doesn't exist.
 		/// </summary>
-		public Vehicle CurrentVehicle => Vehicle.GetVehicleOrNull(Natives.GetVehiclePedIsIn(Handle, false));
+		public Vehicle? CurrentVehicle => Vehicle.GetVehicleOrNull(Natives.GetVehiclePedIsIn(Handle, false));
 
 		// Doesn't seem too work for draft vehicles
 		// public Vehicle LastVehicle => new Vehicle(Natives.GetVehiclePedIsIn(Handle, true));

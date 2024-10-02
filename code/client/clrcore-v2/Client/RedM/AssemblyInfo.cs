@@ -7,5 +7,5 @@ using System.Runtime.Versioning;
 [assembly: AssemblyCompany("The CitizenFX Collective")]
 [assembly: AssemblyCopyright("Copyright CitizenFX and contributors, licensed under the FiveM Platform Agreement")]
 
-[assembly: AssemblyVersion("0.0.0.1")]
-[assembly: AssemblyFileVersion("0.0.0.1")]
+[assembly: AssemblyVersion("0.0.0.2")]
+[assembly: AssemblyFileVersion("0.0.0.2")]

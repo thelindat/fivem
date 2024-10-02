@@ -11,7 +11,7 @@ namespace CitizenFX.RedM
 		/// <value>
 		/// Returns the <see cref="Vehicle"/> or null if it doesn't exist
 		/// </value>
-		public static async Coroutine<Vehicle> CreateVehicle(Model model, Vector3 pos, float heading, bool shouldNetwork = true, bool registerToScript = true, bool createDraftAnimals = true, bool unk = false)
+		public static async Coroutine<Vehicle?> CreateVehicle(Model model, Vector3 pos, float heading, bool shouldNetwork = true, bool registerToScript = true, bool createDraftAnimals = true, bool unk = false)
 		{
 			if (!model.IsVehicle && !model.IsDraftVehicle && !await model.Request())
 			{

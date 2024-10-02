@@ -9,7 +9,7 @@ namespace CitizenFX.RedM
 		/// <value>
 		/// Returns the <see cref="Prop" /> or null if <paramref name="handle"/> is 0
 		/// </value>
-		public static Prop GetPropOrNull(int handle) {
+		public static Prop? GetPropOrNull(int handle) {
 			return handle == 0 ? null : new Prop(handle);
 		}
 	}

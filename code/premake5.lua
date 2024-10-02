@@ -437,6 +437,7 @@ premake.override(premake.vstudio.dotnetbase, "compilerProps", function(base, cfg
     WriteDocumentationFileXml(premake, cfg)
 
     premake.w('<GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>')
+    premake.w('<Nullable>enable</Nullable>')
 end)
 
 premake.override(premake.vstudio.cs2005, "referencePath", function(base, prj)
@@ -521,8 +522,16 @@ if _OPTIONS['game'] ~= 'launcher' then
 			
 			disablewarnings 'CS1591' -- Missing XML comment for publicly visible type or member
 			dotnetframework '4.6'
-			buildoptions '/debug:portable /langversion:7.3'
-			csversion '7.3'
+			
+			-- we specifically only want to enable this for the RedM specific packages.
+			if projectName:find("RedM") then
+				-- We can still only use 7.3 features, this is only 8.0 so we can use nullable
+				buildoptions '/debug:portable /langversion:8.0'
+				csversion '8.0'
+			else
+				buildoptions '/debug:portable /langversion:7.3'
+				csversion '7.3'
+			end
 			
 			links {
 				'System.dll',
