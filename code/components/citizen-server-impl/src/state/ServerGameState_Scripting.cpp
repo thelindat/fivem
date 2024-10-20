@@ -17,8 +17,15 @@ namespace fx
 void DisownEntityScript(const fx::sync::SyncEntityPtr& entity);
 }
 
+// Checks if the entity is valid, and not being considered for entity garbage collection
+bool IsEntityValid(const fx::sync::SyncEntityPtr& entity)
+{
+	return entity && !entity->deleting && !entity->finalizing;
+}
+
 static void Init()
 {
+
 	auto makeEntityFunction = [](auto fn, uintptr_t defaultValue = 0)
 	{
 		return [=](fx::ScriptContext& context)
@@ -43,7 +50,7 @@ static void Init()
 
 			auto entity = gameState->GetEntity(id);
 
-			if (!entity)
+			if (!IsEntityValid(entity))
 			{
 				throw std::runtime_error(va("Tried to access invalid entity: %d", id));
 
@@ -131,7 +138,7 @@ static void Init()
 
 		auto entity = gameState->GetEntity(id);
 
-		if (!entity)
+		if (!IsEntityValid(entity))
 		{
 			context.SetResult(false);
 			return;
@@ -163,7 +170,7 @@ static void Init()
 
 		auto entity = gameState->GetEntity(id);
 
-		if (!entity || entity->finalizing || entity->deleting)
+		if (!IsEntityValid(entity))
 		{
 			context.SetResult(false);
 			return;
@@ -197,7 +204,7 @@ static void Init()
 
 		auto entity = gameState->GetEntity(0, id);
 
-		if (!entity)
+		if (!IsEntityValid(entity))
 		{
 			context.SetResult(0);
 			return;
@@ -253,7 +260,7 @@ static void Init()
 
 		auto entity = gameState->GetEntity(id);
 
-		if (!entity)
+		if (!IsEntityValid(entity))
 		{
 			throw std::runtime_error(va("Tried to access invalid entity: %d", id));
 		}
@@ -1068,11 +1075,6 @@ static void Init()
 		return result;
 	}));
 
-	static auto IsEntityValid = [](const fx::sync::SyncEntityPtr& entity) {
-		// if we're deleting or finalizing our deletion then we don't want to be included in the list
-		return entity && !entity->deleting && !entity->finalizing;
-	};
-
 	fx::ScriptEngine::RegisterNativeHandler("GET_GAME_POOL", [](fx::ScriptContext& context)
 	{
 		// get the current resource manager
@@ -1305,7 +1307,7 @@ static void Init()
 
 		auto entity = gameState->GetEntity(*id);
 
-		if (!entity)
+		if (!IsEntityValid(entity))
 		{
 			throw std::runtime_error(va("Tried to access invalid entity: %d", *id));
 			return;
