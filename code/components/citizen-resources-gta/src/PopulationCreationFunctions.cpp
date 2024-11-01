@@ -41,7 +41,7 @@ static InitFunction initFunction([]()
 				}
 				else
 				{
-					state->model = args[0].as<uint32_t>();
+					state->model = static_cast<uint32_t>(args[0].as<int32_t>());
 				}
 			}
 		});
