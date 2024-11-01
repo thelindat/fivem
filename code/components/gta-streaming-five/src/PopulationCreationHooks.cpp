@@ -73,7 +73,13 @@ static void* CreatePopulationPedWrap(uint16_t a1, int a2, const char* sourceName
 	if (creationState.allowed)
 	{
 #ifdef GTA_FIVE
-		return g_createPopulationPed(mi, position, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21);
+		fwEntity* ent = (fwEntity*)g_createPopulationPed(mi, position, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21);
+		if (ent)
+		{
+			int guid = rage::fwScriptGuid::GetGuidFromBase(ent);
+			creationState.OnPedCreated(guid);
+		}
+		return ent;
 #elif IS_RDR3
 		return g_createPopulationPed(a1, a2, sourceName, mi, position, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21);
 #endif

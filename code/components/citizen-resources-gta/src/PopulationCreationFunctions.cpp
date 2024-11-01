@@ -1,5 +1,7 @@
 #include <StdInc.h>
 
+#include "SharedFunction.h"
+
 #if defined(GTA_FIVE) || defined(IS_RDR3)
 #include <EntitySystem.h>
 
@@ -43,6 +45,22 @@ static InitFunction initFunction([]()
 				{
 					state->model = static_cast<uint32_t>(args[0].as<int32_t>());
 				}
+			}
+		});
+
+		overrideCalls["onPedCreated"] = cbComponent->CreateCallback([=](const msgpack::v1::unpacked& unpacked)
+		{
+			auto args = unpacked.get().as<std::vector<msgpack::object>>();
+			if (args.size() == 1 && args[0].type == msgpack::type::EXT)
+			{
+				auto ref = args[0].as<msgpack::type::ext_ref>() ;
+
+				auto rm = fx::ResourceManager::GetCurrent();
+				auto cbRef = fx::FunctionRef{ ref.data() };
+
+				state->OnPedCreated.Connect(make_shared_function([rm, cbRef = std::move(cbRef)](int pedId) {
+					rm->CallReference<void>(cbRef.GetRef(), pedId);
+				}));
 			}
 		});
 

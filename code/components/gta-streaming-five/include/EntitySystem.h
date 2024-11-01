@@ -855,6 +855,7 @@ struct PopulationCreationState
 	float position[3];
 	uint32_t model;
 	bool allowed;
+	fwEvent<int> OnPedCreated;
 };
 
 STREAMING_EXPORT extern fwEvent<PopulationCreationState*> OnCreatePopulationPed;
