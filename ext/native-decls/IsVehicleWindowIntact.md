@@ -15,3 +15,4 @@ See the client-side [IS_VEHICLE_WINDOW_INTACT](https://docs.fivem.net/natives/?_
 * **windowIndex**: The window index.
 
 ## Return value
+Returns `true` if the vehicle window is intact

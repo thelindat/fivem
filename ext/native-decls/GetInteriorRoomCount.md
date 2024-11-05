@@ -11,6 +11,12 @@ int GET_INTERIOR_ROOM_COUNT(int interiorId);
 
 ## Examples
 
+## Parameters
+* **interiorId**: The target interior.
+
+## Return value
+The amount of rooms in interior.
+
 ```lua
 local playerPed = PlayerPedId()
 local interiorId = GetInteriorFromEntity(playerPed)
@@ -20,9 +26,3 @@ if interiorId ~= 0 then
   print("interior " .. interiorId .. "has " .. count .. " rooms")
 end
 ```
-
-## Parameters
-* **interiorId**: The target interior.
-
-## Return value
-The amount of rooms in interior.

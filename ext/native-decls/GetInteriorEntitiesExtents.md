@@ -9,6 +9,12 @@ game: gta5
 void GET_INTERIOR_ENTITIES_EXTENTS(int interiorId, float* bbMinX, float* bbMinY, float* bbMinZ, float* bbMaxX, float* bbMaxY, float* bbMaxZ);
 ```
 
+## Parameters
+* **interiorId**: The target interior.
+
+## Return value
+Interior entities extents.
+
 ## Examples
 
 ```lua
@@ -20,9 +26,3 @@ if interiorId ~= 0 then
   print("current entities extents is: " .. vec(minX, minY, minZ) .." / " .. vec(maxX, maxY, maxZ))
 end
 ```
-
-## Parameters
-* **interiorId**: The target interior.
-
-## Return value
-Interior entities extents.

@@ -8,3 +8,8 @@ game: gta5
 ```c
 float GET_VEHICLE_DASHBOARD_WATER_TEMP();
 ```
+
+TODO: This just returns the current gear at a float value??
+
+## Return value
+

@@ -8,10 +8,8 @@ apiset: server
 BOOL DOES_PLAYER_EXIST(char* playerSrc);
 ```
 
-Returns whether or not the player exists
-
 ## Return value
-True if the player exists, false otherwise
+Return` true` if the player exists, `false` otherwise.
 
 ## Examples
 

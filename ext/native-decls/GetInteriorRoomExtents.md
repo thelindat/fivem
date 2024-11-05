@@ -9,8 +9,15 @@ game: gta5
 void GET_INTERIOR_ROOM_EXTENTS(int interiorId, int roomIndex, float* bbMinX, float* bbMinY, float* bbMinZ, float* bbMaxX, float* bbMaxY, float* bbMaxZ);
 ```
 
-## Examples
 
+## Parameters
+* **interiorId**: The target interior.
+* **roomIndex**: Interior room index.
+
+## Return value
+Returns the room extents.
+
+## Examples
 ```lua
 local playerPed = PlayerPedId()
 local interiorId = GetInteriorFromEntity(playerPed)
@@ -22,10 +29,3 @@ if roomId ~= -1 then
   print("current room extents is: " .. vec(minX, minY, minZ) .." / " .. vec(maxX, maxY, maxZ))
 end
 ```
-
-## Parameters
-* **interiorId**: The target interior.
-* **roomIndex**: Interior room index.
-
-## Return value
-Room extents.

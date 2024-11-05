@@ -8,5 +8,7 @@ apiset: client
 void MUMBLE_SET_ACTIVE(BOOL state);
 ```
 
+Sets whether mumble should be active
+
 ## Parameters
-* **state**: Voice chat state.
+* **state**: `true` to enable mumble, `false` to disable

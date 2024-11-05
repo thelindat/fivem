@@ -8,18 +8,20 @@ apiset: shared
 object GET_REGISTERED_COMMANDS();
 ```
 
-Returns all commands that are registered in the command system.
+
 The data returned adheres to the following layout:
 ```
 [
 {
-"name": "cmdlist"
+"name": "cmdlist",
+"arity": -1,
 },
 {
-"name": "command1"
+"name": "command1",
+"arity": -1,
 }
 ]
 ```
 
 ## Return value
-An object containing registered commands.
+Returns all commands that are registered in the command system.
