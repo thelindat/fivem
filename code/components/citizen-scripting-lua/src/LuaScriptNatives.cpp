@@ -747,6 +747,21 @@ LUA_INLINE const char* LuaArgumentParser::ParseArgument<const char*>(lua_State* 
 	}
 }
 
+std::optional<scrVectorLua> ParseVectorFloatCompat(const TValue* x, lua_State* L, int idx)
+{
+	if (ttisnumber(x))
+	{
+		const TValue* y = LUA_VALUE(L, idx + 1);
+		const TValue* z = LUA_VALUE(L, idx + 2);
+		if (ttisnumber(y) && ttisnumber(z))
+		{
+			return scrVectorLua{ sc_nvalue(x, float), sc_nvalue(y, float), sc_nvalue(z, float) };
+		}
+	}
+
+	return {};
+}
+
 template<>
 LUA_INLINE scrVectorLua LuaArgumentParser::ParseArgument<scrVectorLua>(lua_State* L, int idx)
 {
@@ -760,11 +775,22 @@ LUA_INLINE scrVectorLua LuaArgumentParser::ParseArgument<scrVectorLua>(lua_State
 		else
 			return scrVectorLua{ v.v4.x, v.v4.y, v.v4.z };
 	}
-	return scrVectorLua{ 0.f, 0.f, 0.f };
+
 #else
-	auto f4 = lua_valuetofloat4(L, o);
-	return scrVectorLua{ f4.x, f4.y, f4.z };
+	if (ttisvector4(o))
+	{
+		auto f4 = lua_valuetofloat4(L, o);
+		return scrVectorLua{ f4.x, f4.y, f4.z };
+	}
 #endif
+
+	
+	if (auto vectorOpt = ParseVectorFloatCompat(o, L, idx))
+	{
+		return *vectorOpt;
+	}
+
+	return scrVectorLua{ 0.f, 0.f, 0.f };
 }
 
 template<>
