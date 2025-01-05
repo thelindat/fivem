@@ -15,11 +15,10 @@ DEFINE_HANDLER(Version)
 
 	// also send our initial registration packet
 	auto username = client->GetState().GetUsername();
-	auto usernameUtf8 = ConvertToUTF8(username);
 
 	MumbleProto::Authenticate authenticate;
 	authenticate.set_opus(true);
-	authenticate.set_username(usernameUtf8);
+	authenticate.set_username(username);
 
 	client->Send(MumbleMessageType::Authenticate, authenticate);
 
