@@ -29,6 +29,8 @@
 
 #include <boost/algorithm/string/case_conv.hpp>
 
+#include "ScriptWarnings.h"
+
 static std::string CleanURL(const std::string& url)
 {
 	auto lowerURL = boost::algorithm::to_lower_copy(url);
@@ -52,7 +54,7 @@ static std::string CleanURL(const std::string& url)
 
 static InitFunction initFunction([] ()
 {
-	static auto sendMessageToFrame = [](fx::ScriptContext& context, const char* native, auto& execFn)
+	static auto sendMessageToFrame = [](fx::ScriptContext& context, const char* native, const std::string& resourceName, auto execFn)
 	{
 		// get the message as JSON and validate it by parsing/recreating (so we won't end up injecting malicious JS into the browser root)
 		const char* messageJson = context.GetArgument<const char*>(0);
@@ -76,12 +78,12 @@ static InitFunction initFunction([] ()
 			}
 			else
 			{
-				trace("%s: writing to JSON writer failed\n", native);
+				fx::scripting::Warningf(resourceName, "%s: writing to JSON writer failed\n", native);
 			}
 		}
 		else
 		{
-			trace("%s: invalid JSON passed in frame (rapidjson error code %d)\n", native, document.GetParseError());
+			fx::scripting::Warningf(resourceName, "%s: invalid JSON passed in frame (rapidjson error code %d)\n", native, document.GetParseError());
 		}
 
 		context.SetResult(false);
@@ -112,22 +114,18 @@ static InitFunction initFunction([] ()
 			{
 				fwRefContainer<ResourceUI> resourceUI = resource->GetComponent<ResourceUI>();
 
+				auto& resourceName = resource->GetName();
+
 				if (resourceUI.GetRef())
 				{
 					if (resourceUI->HasFrame())
 					{
-						sendMessageToFrame(context, "SEND_NUI_MESSAGE", getExecRootFrameFn(resource->GetName()));
+						sendMessageToFrame(context, "SEND_NUI_MESSAGE", resourceName, getExecRootFrameFn(resourceName));
 						return;
 					}
-					else
-					{
-						trace("SEND_NUI_MESSAGE: resource %s has no UI frame\n", resource->GetName());
-					}
 				}
-				else
-				{
-					trace("SEND_NUI_MESSAGE: resource %s has no UI\n", resource->GetName());
-				}
+				
+				fx::scripting::Warningf(resourceName, "SEND_NUI_MESSAGE: resource has no UI, or has no UI frame\n");
 			}
 			else
 			{
@@ -146,7 +144,7 @@ static InitFunction initFunction([] ()
 	{
 		if (nui::HasFrame("loadingScreen"))
 		{
-			return sendMessageToFrame(context, "SEND_LOADING_SCREEN_MESSAGE", getExecRootFrameFn("loadingScreen"));
+			return sendMessageToFrame(context, "SEND_LOADING_SCREEN_MESSAGE", "loadingScreen", getExecRootFrameFn("loadingScreen"));
 		}
 		else
 		{
@@ -231,7 +229,17 @@ static InitFunction initFunction([] ()
 			fx::ScriptContextBuffer fakeCxt;
 			fakeCxt.Push(jsonString);
 
-			sendMessageToFrame(fakeCxt, "SEND_DUI_MESSAGE", [this](std::string_view data)
+			std::string resourceName = "unk-resource";
+			fx::OMPtr<IScriptRuntime> runtime;
+			if (FX_SUCCEEDED(fx::GetCurrentScriptRuntime(&runtime)))
+			{
+				if (auto resource = reinterpret_cast<fx::Resource*>(runtime->GetParentObject()))
+				{
+					resourceName = resource->GetName();
+				}
+			}
+
+			sendMessageToFrame(fakeCxt, "SEND_DUI_MESSAGE", resourceName, [this](std::string_view data)
 			{
 				std::stringstream stream;
 				stream << "window.postMessage(" << data << ", '*');";
