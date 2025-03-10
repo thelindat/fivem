@@ -41,13 +41,14 @@ const EXT_LOCALFUNCREF = 11;
 	let refIndex = 0;
 	const nextRefIdx = () => refIndex++;
 	const refFunctionsMap = new Map();
+	const extendTypes = GetNumResourceMetadata(resource, 'extend_js_msgpack') > 0;
 
 	/** @type {import("./msgpack").Options} */
 	const packrOptions = {
 		// use "std::map" for the underlying msgpack type for compatibility
 		useRecords: false,
 		// do not allow Map, Set, and Error to be serialized (rdr3/protobuf compatibility)
-		moreTypes: false,
+		moreTypes: extendTypes,
 		// keep compatibility Lua/C#
 		encodeUndefinedAsNil: true,
 		// copy the buffer rather than providing a slice/view of the buffer (rdr3/protobuf compatibility)
@@ -72,6 +73,36 @@ const EXT_LOCALFUNCREF = 11;
 		type: EXT_LOCALFUNCREF,
 		unpack: refFunctionUnpacker,
 	});
+
+	function vectorUnpacker(data) {
+		const buffer = Buffer.from(data);
+	
+		return Array.from(
+			new Float32Array(buffer.buffer, buffer.byteOffset, buffer.length / 4),
+			(value) => Number(value.toPrecision(7)),
+		);
+	}
+
+	if (extendTypes) {
+		const EXT_VECTOR2 = 20;
+		const EXT_VECTOR3 = 21;
+		const EXT_VECTOR4 = 22;
+
+		msgpack_extend({
+			type: EXT_VECTOR2,
+			unpack: vectorUnpacker,
+		});
+		
+		msgpack_extend({
+			type: EXT_VECTOR3,
+			unpack: vectorUnpacker,
+		});
+		
+		msgpack_extend({
+			type: EXT_VECTOR4,
+			unpack: vectorUnpacker,
+		});
+	}
 
 	const pack = (value) => packr.pack(value);
 	const unpack = (packed_value) => packr.unpack(packed_value);
@@ -668,81 +699,69 @@ const EXT_LOCALFUNCREF = 11;
 		}
 	}
 
-	const entityTM = {
-		get(t, k) {
-			if (k === 'state') {
-				const es = getEntityStateBagId(t.__data);
-
-				if (isDuplicityVersion) {
-					EnsureEntityStateBag(t.__data);
-				}
-
-				return NewStateBag(es);
-			}
-
-			return null;
-		},
-
-		set() {
-			throw new Error('Not allowed at this time.');
-		},
-
-		__ext: EXT_ENTITY,
-
-		__pack: () => {
-			return String(NetworkGetNetworkIdFromEntity(this.__data));
-		},
-
-		__unpack: (data, t) => {
-			const ref = NetworkGetEntityFromNetworkId(Number(data));
-			return new Proxy({ __data: ref }, entityTM);
-		},
-	};
-
-	const playerTM = {
-		get(t, k) {
-			if (k === 'state') {
-				const pid = t.__data === -1 ? GetPlayerServerId(PlayerId()) : t.__data;
-
-				const es = `player:${pid}`;
-
-				return NewStateBag(es);
-			}
-
-			return null;
-		},
-
-		set() {
-			throw new Error('Not allowed at this time.');
-		},
-
-		__ext: EXT_PLAYER,
-
-		__pack: () => {
-			return String(this.__data);
-		},
-
-		__unpack: (data, t) => {
-			const ref = Number(data);
-			return new Proxy({ __data: ref }, playerTM);
-		},
-	};
-
-	global.Entity = (ent) => {
-		if (typeof ent === 'number') {
-			return new Proxy({ __data: ent }, entityTM);
+	class Entity {
+		#entityId = 0;
+	
+		constructor(entityId) {
+			this.#entityId = entityId;
 		}
-
-		return ent;
-	};
-
-	global.Player = (ent) => {
-		if (typeof ent === 'number' || typeof ent === 'string') {
-			return new Proxy({ __data: Number(ent) }, playerTM);
+	
+		toJSON() {
+			return { __data: this.__data };
 		}
+	
+		get __data() {
+			return this.#entityId;
+		}
+	
+		get state() {
+			const stateBagId = getEntityStateBagId(this.#entityId);
 
-		return ent;
-	};
+			if (isDuplicityVersion) {
+				EnsureEntityStateBag(t.__data);
+			}
+	
+			return NewStateBag(stateBagId);
+		}
+	}
+	
+	class Player {
+		#playerId = 0;
+	
+		constructor(playerId) {
+			this.#playerId = playerId;
+		}
+	
+		toJSON() {
+			return { __data: this.__data };
+		}
+	
+		get __data() {
+			return this.#playerId;
+		}
+	
+		get state() {
+			return NewStateBag(`player:${this.#playerId}`);
+		}
+	}
+	
+	msgpack_extend({
+		type: EXT_ENTITY,
+		Class: Entity,
+		write: (data) => String(NetworkGetNetworkIdFromEntity(data.__data)),
+		read: (data) => new CfxEntity(NetworkGetEntityFromNetworkId(Number(data))),
+	});
+	
+	msgpack_extend({
+		type: EXT_PLAYER,
+		Class: Player,
+		write: (data) => String(data.__data),
+		read: (data) => new CfxPlayer(Number(data)),
+	});
+
+	global.Entity = (ent) => typeof ent === "number" ? new Entity(ent) : ent;
+
+	global.Player = (ent) => typeof ent === "number" ? new Player(ent) : ent;
 
 	if (!isDuplicityVersion) {
 		global.LocalPlayer = Player(-1);
