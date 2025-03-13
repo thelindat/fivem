@@ -668,80 +668,53 @@ const EXT_LOCALFUNCREF = 11;
 		}
 	}
 
-	const entityTM = {
-		get(t, k) {
-			if (k === 'state') {
-				const es = getEntityStateBagId(t.__data);
+	class EntityState {
+		__data = 0;
+	
+		constructor(entityId) {
+			this.__data = entityId;
+		}
+	
+		get state() {
+			const stateBagId = getEntityStateBagId(this.__data);
+			return NewStateBag(stateBagId);
+		}
+	}
+	
+	class PlayerState {
+		__data = 0;
+	
+		constructor(playerId) {
+			this.__data = playerId === -1 ? GetPlayerServerId(PlayerId()) : playerId;
+		}
+	
+		get state() {
+			return NewStateBag(`player:${this.__data}`);
+		}
+	}
 
-				if (isDuplicityVersion) {
-					EnsureEntityStateBag(t.__data);
-				}
-
-				return NewStateBag(es);
-			}
-
-			return null;
-		},
-
-		set() {
-			throw new Error('Not allowed at this time.');
-		},
-
-		__ext: EXT_ENTITY,
-
-		__pack: () => {
-			return String(NetworkGetNetworkIdFromEntity(this.__data));
-		},
-
-		__unpack: (data, t) => {
-			const ref = NetworkGetEntityFromNetworkId(Number(data));
-			return new Proxy({ __data: ref }, entityTM);
-		},
-	};
-
-	const playerTM = {
-		get(t, k) {
-			if (k === 'state') {
-				const pid = t.__data === -1 ? GetPlayerServerId(PlayerId()) : t.__data;
-
-				const es = `player:${pid}`;
-
-				return NewStateBag(es);
-			}
-
-			return null;
-		},
-
-		set() {
-			throw new Error('Not allowed at this time.');
-		},
-
-		__ext: EXT_PLAYER,
-
-		__pack: () => {
-			return String(this.__data);
-		},
-
-		__unpack: (data, t) => {
-			const ref = Number(data);
-			return new Proxy({ __data: ref }, playerTM);
-		},
-	};
-
+	msgpack_extend({
+		type: EXT_ENTITY,
+		Class: EntityState,
+		write: (data) => String(NetworkGetNetworkIdFromEntity(data.__data)),
+		read: (data) => new EntityState(NetworkGetEntityFromNetworkId(+data)),
+	});
+	
+	msgpack_extend({
+		type: EXT_PLAYER,
+		Class: PlayerState,
+		write: (data) => String(data.__data),
+		read: (data) => new PlayerState(+data),
+	});
+	
 	global.Entity = (ent) => {
-		if (typeof ent === 'number') {
-			return new Proxy({ __data: ent }, entityTM);
-		}
-
-		return ent;
+		return typeof ent === "number" ? new EntityState(ent) : ent;
 	};
-
+	
 	global.Player = (ent) => {
-		if (typeof ent === 'number' || typeof ent === 'string') {
-			return new Proxy({ __data: Number(ent) }, playerTM);
-		}
-
-		return ent;
+		return typeof ent === "number" || typeof ent === "string"
+			? new PlayerState(+ent)
+			: ent;
 	};
 
 	if (!isDuplicityVersion) {
